@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'cake_info.dart';
 
 void main() {
   runApp(MyApp());
@@ -26,48 +27,109 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final _data = Data();
+  var cakeBuilder;
+  List<CakeInfo> _cakeNew;
+  List<CakeInfo> _cakeBoughtAlot;
+
+  @override
+  void initState() {
+    fetchData();
+    super.initState();
+  }
+
+  void fetchData() {
+    cakeBuilder = FutureBuilder(
+      future: _getCakes(),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        switch (snapshot.connectionState) {
+          case ConnectionState.none:
+          case ConnectionState.waiting:
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          default:
+            if (snapshot.hasError)
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            else
+              return _buildCakeBodyWidget(snapshot);
+        }
+      },
+    );
+  }
+
+  Future _getCakes() async {
+    List<CakeInfo> cakeNew = [
+      CakeInfo(id: 1, title: 'Butter Cake', price: '20'),
+      CakeInfo(id: 1, title: 'Strawberry Cake', price: '30'),
+      CakeInfo(id: 1, title: 'Banana Cake', price: '40'),
+      CakeInfo(id: 1, title: 'Grapes Cake', price: '15')
+    ];
+
+    List<CakeInfo> cakeBoughtAlot = [
+      CakeInfo(id: 1, title: 'Butter Cake', price: '20'),
+      CakeInfo(id: 1, title: 'Strawberry Cake', price: '30'),
+      CakeInfo(id: 1, title: 'Banana Cake', price: '40'),
+      CakeInfo(id: 1, title: 'Grapes Cake', price: '15')
+    ];
+
+    await new Future.delayed(new Duration(seconds: 3));
+    return CakeData(cakeNew: cakeNew, cakeBoughtAlot: cakeBoughtAlot);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       color: Colors.white,
       home: Scaffold(
-        appBar: AppBar(
-            centerTitle: true,
-            title: Text('Introduction Cake', textAlign: TextAlign.center),
-            leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {}),
-            actions: [
-              Padding(
-                  padding: EdgeInsets.only(right: 20),
-                  child: Icon(Icons.search)),
-            ]),
-        bottomNavigationBar: BottomNavigationBar(
-            currentIndex: 0,
-            type: BottomNavigationBarType.fixed,
-            items: [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                title: Text('Home'),
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.cake),
-                title: Text('My Cake'),
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.contacts),
-                title: Text('Contact'),
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.settings),
-                title: Text('Settings'),
-              ),
-            ]),
-        body: _buildCakeBodyWidget(),
+        appBar: _buildAppbar(),
+        bottomNavigationBar: _buildBottomNav(),
+        body: cakeBuilder,
       ),
     );
   }
 
-  Widget _buildCakeBodyWidget() {
+  Widget _buildAppbar() {
+    return AppBar(
+        centerTitle: true,
+        title: Text('Introduction Cake', textAlign: TextAlign.center),
+        leading: IconButton(icon: Icon(Icons.arrow_back), onPressed: () {}),
+        actions: [
+          Padding(
+              padding: EdgeInsets.only(right: 20), child: Icon(Icons.search)),
+        ]);
+  }
+
+  Widget _buildBottomNav() {
+    return BottomNavigationBar(
+        currentIndex: 0,
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            title: Text('Home'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.cake),
+            title: Text('My Cake'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.contacts),
+            title: Text('Contact'),
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            title: Text('Settings'),
+          ),
+        ]);
+  }
+
+  Widget _buildCakeBodyWidget(AsyncSnapshot snapshot) {
+    var data = snapshot.data as CakeData;
+    _cakeNew = data.cakeNew;
+    _cakeBoughtAlot = data.cakeBoughtAlot;
+
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: [
@@ -91,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.all(5.5),
-        itemCount: _data.getLength(),
+        itemCount: _cakeNew.length,
         itemBuilder: _itemNewListBuilder,
       ),
     );
@@ -114,12 +176,13 @@ class _MyHomePageState extends State<MyHomePage> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
-                    width: double.infinity,
-                    height: 50.0,
-                    padding: EdgeInsets.only(top: 10.0),
-                    color: Colors.blue.shade300,
-                    child: _buildCakeInfoText(_data.getTitle(index),
-                        _data.getPrice(index), Colors.white)),
+                  width: double.infinity,
+                  height: 50.0,
+                  padding: EdgeInsets.only(top: 10.0),
+                  color: Colors.blue.shade300,
+                  child: _buildCakeInfoText(_cakeNew[index].title,
+                      _cakeNew[index].price, Colors.white),
+                ),
               ),
             ]),
           ),
@@ -142,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
       height: 255.0,
       padding: EdgeInsets.symmetric(horizontal: 10.0),
       child: GridView.builder(
-          itemCount: _data.getLength(),
+          itemCount: _cakeBoughtAlot.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: (orientation == Orientation.portrait) ? 2 : 3),
           itemBuilder: _itemAlotListBuilder),
@@ -150,7 +213,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _itemAlotListBuilder(BuildContext context, int index) {
-    print(context);
     return Container(
       child: Card(
         child: Row(children: [
@@ -170,8 +232,11 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Center(
                     child: Column(children: [
                       Icon(Icons.cake, color: Colors.blue, size: 70.0),
-                      _buildCakeInfoText(_data.getTitle(index),
-                          _data.getPrice(index), Colors.blue),
+                      _buildCakeInfoText(
+                        _cakeBoughtAlot[index].title,
+                        _cakeBoughtAlot[index].price,
+                        Colors.blue,
+                      ),
                       Divider(),
                       Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -210,32 +275,4 @@ Widget _buildCakeInfoText(String name, String price, Color color) {
     Text(name, style: TextStyle(color: color, fontSize: 13.0)),
     Text('$price\$', style: TextStyle(color: color, fontSize: 13.0)),
   ]);
-}
-
-class Data {
-  Map fetchedData = {
-    'listCakes': [
-      {'id': 1, 'title': 'Butter Cake', 'price': '20'},
-      {'id': 2, 'title': 'Strawberry Cake', 'price': '30'},
-      {'id': 3, 'title': 'Banana Cake', 'price': '40'},
-      {'id': 4, 'title': 'Grapes Cake', 'price': '15'},
-    ]
-  };
-  List _listCakes;
-
-  Data() {
-    _listCakes = fetchedData['listCakes'];
-  }
-
-  String getTitle(int index) {
-    return _listCakes[index]['title'];
-  }
-
-  String getPrice(int index) {
-    return _listCakes[index]['price'];
-  }
-
-  int getLength() {
-    return _listCakes.length;
-  }
 }
